@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<style>
+:root { --font-ui-small: 13px; --font-ui-smaller: 12px; --font-smaller: 12px; --font-monospace: Consolas, monospace; --text-muted: #aaa; --text-normal: #e1e1e1; --text-faint: #888; --text-accent: #b6a4ff; --text-on-accent: #171421; --interactive-accent: #b6a4ff; --background-modifier-border: #393939; --background-modifier-hover: #333; }
+* { box-sizing: border-box; } body { background: #242424; color: #e1e1e1; font: 13px 'Malgun Gothic', sans-serif; margin: 0; } button, textarea { font: inherit; border-radius: 5px; border: 1px solid #444; } textarea { padding: 10px; background: #1e1e1e; color: inherit; } a:focus-visible { outline: 1px solid #b6a4ff; } svg { stroke: currentColor; stroke-width: 2; fill: none; } [hidden] { display: none !important; }
+.fixture-chrome { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #393939; color: #aaa; } .fixture-chrome svg { width: 20px; height: 20px; } .fixture-chrome span { display: inline-flex; }
+a:hover { color: #f88; text-decoration: underline; }
+.pane-fixture { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; height: 90vh; }
+.pane-fixture.vertical { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+.pane-fixture article { display: flex; flex-direction: column; min-height: 0; border: 1px solid #444; border-radius: 6px; }
+.pane-fixture header { display: flex; gap: 6px; align-items: center; padding: 8px; border-bottom: 1px solid #444; }
+.pane-fixture header span { flex: 1; }
+.pane-fixture button { color: #aaa; background: transparent; border: 0; padding: 6px; display: flex; cursor: pointer; }
+.pane-fixture button:hover { background: #444; color: #fff; }
+.pane-fixture svg { width: 18px; height: 18px; }
+.pane-fixture textarea { flex: 1; min-height: 0; resize: none; border: 0; background: transparent; border-radius: 0; }
+.modal-container { position: fixed; inset: 0; display: grid; place-items: center; background: #0008; }
+.modal { position: relative; width: min(520px, 90vw); background: #292929; border: 1px solid #555; border-radius: 12px; padding: 24px; }
+.modal button { color: #eee; background: #444; padding: 8px 14px; cursor: pointer; }
+.modal button.mod-warning { background: #ac3c40; }
+.modal button:focus-visible { outline: 2px solid #b6a4ff; outline-offset: 3px; }
+.modal .modal-close-button { position: absolute; right: 12px; top: 12px; padding: 4px; border: 0; background: transparent; }
+</style></head><body><div class="fixture-chrome" id="fixture-chrome"></div><script>
+// The production plugin is loaded unchanged. Only the Obsidian host boundary is
+// substituted; Electron provides real DOM layout and click/focus behavior.
+const fs = require('node:fs'), path = require('node:path');
+HTMLElement.prototype.createEl = function(tag, options = {}) {
+  const el = document.createElement(tag); if (options.text) el.textContent = options.text;
+  if (options.cls) el.className = options.cls;
+  if (options.placeholder) el.placeholder = options.placeholder;
+  for (const [key, value] of Object.entries(options.attr || {})) el.setAttribute(key, value);
+  this.append(el); return el;
+};
+HTMLElement.prototype.createDiv = function(options) { return this.createEl('div', options); };
+HTMLElement.prototype.createSpan = function(options) { return this.createEl('span', options); };
+HTMLElement.prototype.empty = function() { this.replaceChildren(); };
+HTMLElement.prototype.addClass = function(name) { this.classList.add(name); };
+HTMLElement.prototype.removeClass = function(name) { this.classList.remove(name); };
+HTMLElement.prototype.toggleClass = function(name, value) { this.classList.toggle(name, value); };
+HTMLElement.prototype.setText = function(text) { this.textContent = text; };
+HTMLElement.prototype.isShown = function() { return this.getClientRects().length > 0 && getComputedStyle(this).display !== 'none'; };
+const iconPaths = {
+  'git-commit-horizontal': '<circle cx="12" cy="12" r="3"/><path d="M3 12h6m6 0h6"/>',
+  'arrow-up-from-line': '<path d="m7 8 5-5 5 5M12 3v12M5 21h14"/>',
+  'arrow-down-to-line': '<path d="m7 10 5 5 5-5M12 3v12M5 21h14"/>',
+  'refresh-cw': '<path d="M20 11a8 8 0 0 0-14-5L3 9m0-6v6h6m-5 4a8 8 0 0 0 14 5l3-3m0 6v-6h-6"/>',
+  'minus': '<path d="M5 12h14"/>', 'plus': '<path d="M5 12h14M12 5v14"/>',
+  'chevron-right': '<path d="m9 6 6 6-6 6"/>', 'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+  'undo-2': '<path d="M3 7h10a7 7 0 0 1 0 14M3 7l5-5M3 7l5 5"/>',
+  'copy': '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+  'clipboard-list': '<rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H5v16h14V5h-3M9 11h6M9 15h6"/>',
+  'file-pen-line': '<path d="M9 21H4V3h10l6 6v3M14 3v6h6m-9 9 7-7 3 3-7 7h-3z"/>',
+  'arrow-right-to-line': '<path d="M21 4v16M3 12h12m-5-5 5 5-5 5"/>',
+  'arrow-left-to-line': '<path d="M3 4v16M21 12H9m5-5-5 5 5 5"/>',
+  'arrow-up-to-line': '<path d="M4 3h16M12 21V9m-5 5 5-5 5 5"/>',
+};
+const obsidian = {
+  Plugin: class { async loadData() { return {}; } registerView(type, factory) { this.factory = factory; } addRibbonIcon(name) { obsidian.setIcon(document.querySelector('#fixture-chrome').createSpan(), name); } addCommand(command) { (this.commands ||= []).push(command); } addSettingTab() {} registerEvent() {} registerDomEvent(el, event, handler, options) { el.addEventListener(event, handler, options); this.register(() => el.removeEventListener(event, handler, options)); } registerInterval(id) { clearInterval(id); } register(callback) { (this.cleanups ||= []).push(callback); } },
+  ItemView: class { constructor(leaf) { this.leaf = leaf; this.contentEl = document.body.createDiv(); } },
+  Modal: class {
+    constructor() { this.containerEl = document.createElement('div'); this.containerEl.className = 'modal-container'; this.modalEl = this.containerEl.createDiv({ cls: 'modal' }); this.titleEl = this.modalEl.createEl('h3', { cls: 'modal-title' }); this.contentEl = this.modalEl.createDiv({ cls: 'modal-content' }); const close = this.modalEl.createEl('button', { cls: 'modal-close-button', text: '×', attr: { 'aria-label': '닫기' } }); close.onclick = () => this.close(); }
+    setTitle(title) { this.titleEl.textContent = title; }
+    open() { window.lastModal = this; document.body.append(this.containerEl); this.containerEl.addEventListener('keydown', event => { if (event.key === 'Escape') this.close(); }); this.onOpen(); }
+    close() { this.onClose(); this.containerEl.remove(); }
+  }, MarkdownView: class {}, TextFileView: class {}, PluginSettingTab: class {}, Setting: class {},
+  FileSystemAdapter: class { getBasePath() { return __dirname; } }, Notice: class { constructor(text) { notices.push(text); } hide() {} },
+  addIcon(name, content) { customIcons[name] = content; },
+  setTooltip(el, text) { el.dataset.tooltip = text; el.setAttribute('aria-label', text); },
+  setIcon(el, name) { el.dataset.icon = name; el.innerHTML = '<svg viewBox="0 0 ' + (customIcons[name] ? '100 100' : '24 24') + '">' + (customIcons[name] || iconPaths[name] || '<path d="M5 12h14M12 5v14"/>') + '</svg>'; },
+};
+const customIcons = {};
+const notices = [];
+async function runTransferTest() {
+  document.body.empty();
+  const grid = document.body.createDiv({ cls: 'pane-fixture' });
+  const disk = new Map(), views = [], events = [];
+  class TestMarkdownView {
+    constructor(name, text) {
+      this.file = { path: name + '.md', basename: name };
+      this.leaf = { view: this, parent: {} }; views.push(this); disk.set(this.file.path, text);
+      this.containerEl = grid.createEl('article');
+      this.header = this.containerEl.createEl('header'); this.header.createSpan({ text: name, cls: 'workspace-tab-header is-active' });
+      this.containerEl.addClass('workspace-tabs');
+      const input = this.input = this.containerEl.createEl('textarea'); input.value = text;
+      this.editor = {
+        getValue: () => input.value, getCursor: which => which === 'to' ? input.selectionEnd : input.selectionStart,
+        posToOffset: pos => pos, offsetToPos: offset => offset, listSelections: () => [{}],
+        replaceRange: (text, from, to = from) => { input.value = input.value.slice(0, from) + text + input.value.slice(to); },
+        setCursor: pos => input.setSelectionRange(pos, pos), focus: () => input.focus(),
+        getScrollInfo: () => ({ left: input.scrollLeft, top: input.scrollTop }),
+        setSelections() {}, scrollTo: (left, top) => { input.scrollLeft = left; input.scrollTop = top; },
+      };
+    }
+    getMode() { return 'source'; }
+    getViewType() { return 'markdown'; }
+    async save() { disk.set(this.file.path, this.input.value); }
+    addAction(icon, title, callback) { const button = this.header.createEl('button', { attr: { title } }); obsidian.setIcon(button, icon); button.onclick = callback; return button; }
+  }
+  obsidian.MarkdownView = TestMarkdownView;
+  const source = new TestMarkdownView('원본 문서', 'hello world');
+  const target = new TestMarkdownView('대상 문서', 'target!');
+  const output = { exports: {} };
+  new Function('require', 'module', fs.readFileSync(path.join(__dirname, '../main.js'), 'utf8'))(name => name === 'obsidian' ? obsidian : require(name), output);
+  const plugin = window.transferPlugin = new output.exports();
+  let activeLeaf = source.leaf;
+  plugin.app = { vault: { read: async file => disk.get(file.path), trash: async () => { throw new Error('Selection move must not trash a file'); } }, workspace: {
+    on: (name, callback) => { events.push([name, callback]); }, onLayoutReady: callback => callback(),
+    iterateRootLeaves: callback => views.forEach(view => callback(view.leaf)), setActiveLeaf(leaf) { activeLeaf = leaf; },
+    getActiveViewOfType: type => activeLeaf.view instanceof type ? activeLeaf.view : null,
+  } };
+  plugin.onload();
+  const buttonCount = grid.querySelectorAll('.lugtab-action').length;
+  const next = source.header.querySelector('[data-direction="next"]');
+  const previous = target.header.querySelector('[data-direction="previous"]');
+  const horizontalIcons = [next.dataset.icon, previous.dataset.icon];
+  source.input.setSelectionRange(6, 11); target.input.setSelectionRange(6, 6);
+  const mouse = new MouseEvent('mousedown', { bubbles: true, cancelable: true }); next.dispatchEvent(mouse);
+  next.click(); await new Promise(resolve => setTimeout(resolve, 50));
+  const moved = [source.input.value, target.input.value];
+  grid.addClass('vertical'); plugin.syncActions();
+  const verticalIcons = [next.dataset.icon, previous.dataset.icon];
+  target.input.setSelectionRange(6, 11); source.input.setSelectionRange(6, 6);
+  previous.click(); await new Promise(resolve => setTimeout(resolve, 50));
+  const returned = [source.input.value, target.input.value];
+  plugin.syncActions();
+  target.getViewType = () => 'empty';
+  plugin.app.vault.getAbstractFileByPath = path => disk.has(path) ? { path } : null;
+  plugin.app.vault.create = async (path, content) => { disk.set(path, content); return { path, basename: path.replace(/\.md$/, '') }; };
+  target.leaf.setViewState = async state => { target.file = { path: state.state.file, basename: state.state.file.replace(/\.md$/, '') }; target.input.value = disk.get(target.file.path); target.getViewType = () => 'markdown'; target.input.setSelectionRange(0, 0); };
+  source.input.setSelectionRange(6, 11);
+  next.click(); await new Promise(resolve => setTimeout(resolve, 50));
+  const emptyTarget = [target.file.path, target.input.value, source.input.value];
+  source.input.setSelectionRange(2, 5);
+  const command = plugin.commands.find(command => command.id === 'focus-other-pane');
+  command.editorCallback(source.editor, source);
+  const focusedTarget = activeLeaf === target.leaf;
+  command.editorCallback(target.editor, target);
+  const focusPreserved = focusedTarget && activeLeaf === source.leaf && source.input.selectionStart === 2 && source.input.selectionEnd === 5;
+  const realMoveTab = plugin.moveTab.bind(plugin);
+  const tabMoves = []; plugin.moveTab = (view, direction, fallback) => tabMoves.push([view.file.path, direction, fallback]);
+  const title = source.header.querySelector('.workspace-tab-header');
+  title.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+  title.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true, shiftKey: true }));
+  const duplicateCount = grid.querySelectorAll('.lugtab-action').length;
+  target.containerEl.remove(); views.splice(1);
+  const splits = [], autoTargets = [];
+  plugin.app.workspace.createLeafBySplit = (leaf, axis, before) => {
+    if (leaf !== source.leaf) throw new Error('Wrong source split');
+    splits.push([axis, before]);
+    const created = new TestMarkdownView('temporary', ''); disk.delete(created.file.path); created.file = null;
+    created.getViewType = () => 'empty';
+    created.leaf.setViewState = async state => {
+      created.file = { path: state.state.file, basename: state.state.file.replace(/\.md$/, '') };
+      created.input.value = disk.get(created.file.path); created.getViewType = () => 'markdown'; created.input.setSelectionRange(0, 0);
+    };
+    return created.leaf;
+  };
+  source.input.value = 'hello world'; source.input.setSelectionRange(0, 0);
+  const filesBeforeCancel = disk.size;
+  const cancellation = plugin.send(source, 'next');
+  document.querySelector('.lugtab-confirm-actions button').click(); await cancellation;
+  const cancelCreatedNothing = splits.length === 0 && disk.size === filesBeforeCancel;
+  for (const direction of ['next', 'previous']) {
+    source.input.value = 'hello world'; source.input.setSelectionRange(6, 11);
+    await plugin.send(source, direction);
+    const created = views[1];
+    autoTargets.push([created?.file?.path, created?.input.value, source.input.value, activeLeaf === created?.leaf]);
+    created?.containerEl.remove(); views.splice(1);
+  }
+  const createSplit = plugin.app.workspace.createLeafBySplit;
+  plugin.app.workspace.createLeafBySplit = () => { throw new Error('split failed'); };
+  source.input.value = 'hello world'; source.input.setSelectionRange(6, 11);
+  await plugin.send(source, 'next');
+  const splitFailurePreservedSource = source.input.value === 'hello world';
+  plugin.syncActions();
+  plugin.app.workspace.createLeafBySplit = createSplit;
+  plugin.app.workspace.requestSaveLayout = () => {};
+  let deferredTabLoaded = false;
+  plugin.app.workspace.createLeafBySplit = (...args) => {
+    const leaf = createSplit(...args), open = leaf.setViewState, view = leaf.view;
+    leaf.setViewState = async state => {
+      leaf.pendingState = state;
+      leaf.view = { containerEl: view.containerEl, getViewType: () => 'deferred' };
+    };
+    leaf.finishLoading = async () => { await open(leaf.pendingState); leaf.view = view; };
+    return leaf;
+  };
+  plugin.app.workspace.revealLeaf = async leaf => {
+    if (leaf.view.getViewType() !== 'deferred') throw new Error('Fixture must exercise deferred loading');
+    await new Promise(resolve => setTimeout(resolve, 30));
+    if (!source.containerEl.isConnected) throw new Error('Source closed before destination loaded');
+    await leaf.finishLoading(); activeLeaf = leaf; deferredTabLoaded = true;
+  };
+  source.leaf.getViewState = () => ({ type: 'markdown', state: { file: source.file.path } });
+  source.leaf.getEphemeralState = () => ({});
+  source.leaf.detach = () => { source.containerEl.remove(); views.splice(views.indexOf(source), 1); };
+  activeLeaf = source.leaf; plugin.moveTab = realMoveTab;
+  title.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true }));
+  for (let frame = 0; frame < 20 && plugin.busy; frame++) await new Promise(resolve => requestAnimationFrame(resolve));
+  const tabSplit = splits.pop();
+  const relocatedTab = [activeLeaf.view.file.path, activeLeaf.view.editor.getValue(), views.length, source.containerEl.isConnected];
+  return { buttonCount, horizontalIcons, verticalIcons, moved, returned, emptyTarget, focusPreserved, hotkey: command.hotkeys[0], tabMoves, selectionProtected: mouse.defaultPrevented, duplicateCount, splits, autoTargets, cancelCreatedNothing, splitFailurePreservedSource, tabSplit, relocatedTab, deferredTabLoaded };
+}
+</script></body></html>
