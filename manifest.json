@@ -4,6 +4,6 @@
   "version": "0.1.0",
   "minAppVersion": "1.7.2",
   "description": "Send the selected text or the whole note to the next or previous editor pane.",
-  "author": "Revision",
+  "author": "lugglory",
   "isDesktopOnly": false
 }
