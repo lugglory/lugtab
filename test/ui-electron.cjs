@@ -34,7 +34,7 @@ app.whenReady().then(async () => {
     assert.deepEqual(transfer.relocatedTab, ['원본 문서.md', 'hello world', 1, false], 'Double-click moves the document and closes the original tab');
     assert.equal(transfer.deferredTabLoaded, true, 'Destination finishes deferred loading before the original tab closes');
     assert.equal(transfer.focusPreserved, true, 'Panel focus switching preserves the selection');
-    assert.deepEqual(transfer.hotkey, { modifiers: ['Ctrl'], key: '\\' });
+    assert.equal(transfer.hotkey, undefined, 'No default hotkey is assigned');
     assert.deepEqual(transfer.tabMoves, [['원본 문서.md', 'next', true], ['원본 문서.md', 'previous', false]], 'Double-click and Shift-double-click choose the correct direction');
     const transferScreenshot = path.join(os.tmpdir(), 'lugtab-transfer-buttons.png');
     await capture(transferScreenshot);

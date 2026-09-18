@@ -1,48 +1,53 @@
 # Lugtab
 
-Markdown 편집기의 텍스트를 화면상 다음(오른쪽·아래) 또는 이전(왼쪽·위) 문서 패널로 보내는 독립 플러그인입니다. 각 문서 패널 상단의 두 화살표 버튼으로 실행합니다. 선택이 없으면 확인 후 제목과 문서 전체를 합치고 원본을 휴지통으로 보냅니다.
+[한국어](README.ko.md)
 
-이동할 다른 패널이 없으면 텍스트 보내기는 다음은 오른쪽, 이전은 왼쪽에 새 패널과 문서를 만듭니다. 제목 더블클릭으로 탭을 옮길 때는 아래쪽에 새 패널을 만들고 현재 문서를 엽니다. 대상 내용을 확인한 뒤 원래 탭을 닫으며, 빈 원래 패널도 남기지 않습니다. 다른 패널이 있으면 기존 순환 이동을 유지합니다.
+Lugtab is an Obsidian plugin that sends text from a Markdown editor to the next (right / below) or previous (left / above) editor pane. Two arrow buttons at the top of every Markdown pane run it. With no selection, it asks for confirmation, merges the whole note (with its title) into the target note, and moves the original to the trash.
 
-Obsidian 1.7.2 이상이 필요합니다. 데스크톱과 모바일에서 동작합니다.
+If there is no other pane, sending text creates a new pane and note — to the right for "next", to the left for "previous". Double-clicking a tab title moves the tab itself to the adjacent pane, creating a new pane below when none exists.
 
-## 설치
+Requires Obsidian 1.7.2 or later. Works on desktop and mobile.
 
-저장소에 실행용 `main.js`도 포함되어 있어 설치만 할 때는 빌드가 필요 없습니다.
+> The interface text (command names, notices, confirmation dialogs) is currently in Korean.
 
-1. 원하는 보관함의 `.obsidian/plugins/` 안에 `lugtab` 폴더를 만듭니다.
-2. 이 폴더의 `manifest.json`, `main.js`를 복사합니다.
-3. Obsidian 설정 → 커뮤니티 플러그인에서 플러그인을 켭니다. 목록에 없으면 Obsidian을 다시 시작합니다.
+## Installation
 
-```text
-보관함/.obsidian/plugins/lugtab/
-├── manifest.json
-└── main.js
-```
+Once the plugin is listed, install it from **Settings → Community plugins → Browse** by searching for "Lugtab".
 
-## 사용법
+Manual installation:
 
-편집 모드(라이브 프리뷰 포함)의 Markdown 문서에서 **각 문서 패널 상단의 이전·다음 보내기 버튼**으로 실행합니다. 가로 분할에서는 왼쪽·오른쪽, 세로 분할에서는 위·아래 화살표가 표시됩니다. 명령 팔레트와 편집기 우클릭 메뉴에서도 실행할 수 있습니다.
+1. Download `main.js` and `manifest.json` from the [latest release](https://github.com/lugglory/lugtab/releases/latest).
+2. Put them in `<vault>/.obsidian/plugins/lugtab/`.
+3. Enable the plugin in **Settings → Community plugins**. Restart Obsidian if it is not listed.
 
-- `다음 문서 패널로 텍스트 보내기 (오른쪽·아래)`
-- `이전 문서 패널로 텍스트 보내기 (왼쪽·위)`
+## Usage
 
-화면의 위→아래, 같은 높이에서는 왼쪽→오른쪽 순서로 패널을 순환합니다. 마지막의 다음은 처음이고, 처음의 이전은 마지막입니다. 텍스트 보내기·탭 이동·포커스 전환 모두 같은 순서를 사용합니다. 숨겨진 탭, 사이드바, 별도 창은 대상에서 제외합니다. 이동할 다른 패널이 없으면 텍스트 보내기는 다음은 오른쪽, 이전은 왼쪽에 새 패널을 만듭니다. 탭 이동은 아래쪽에 새 패널을 만듭니다. 포커스 전환만 실행할 때는 새 패널을 만들지 않습니다.
+In a Markdown note in editing mode (including Live Preview), use the **previous / next send buttons at the top of each pane**. Horizontal splits show left / right arrows and vertical splits show up / down arrows. The same actions are available from the command palette and the editor context menu:
 
-- 선택이 있으면 해당 텍스트를 **대상 문서의 마지막 커서 위치**에 넣고 원본 선택 영역을 지웁니다. 대상의 선택 영역은 덮어쓰지 않습니다.
-- 선택이 없으면 확인창을 띄우고 `# 파일명` 제목과 함께 문서 전체를 합칩니다. 같은 제목이 첫 줄에 있으면 중복해서 붙이지 않습니다. 대상 저장을 확인한 뒤 원본을 시스템 휴지통(불가하면 보관함 휴지통)으로 보냅니다.
-- 보낸 뒤 대상 편집기로 포커스가 이동합니다. 빈 패널이면 원본과 같은 폴더에 `새 메모.md`를 만들고 그곳에 보냅니다(이름이 겹치면 번호 추가). 문서 전체는 패널·문서 생성 전에 확인하며 취소하면 둘 다 만들지 않습니다. 읽기 모드·같은 파일이면 안내만 표시합니다.
-- 다중 커서는 지원하지 않습니다. 한 선택 영역을 사용하세요.
-- Obsidian 설정 → 단축키에서 두 명령에 원하는 키를 지정할 수 있습니다.
-- **탭 제목 또는 문서 제목줄 더블클릭:** 문서 탭 자체를 다음 패널로 옮깁니다. **Shift+더블클릭:** 이전 패널로 옮깁니다. 대상이 없으면 아래쪽에 새 패널을 만듭니다. 대상에서 문서를 정상적으로 연 것을 확인한 뒤 원래 탭을 닫습니다. 마지막 탭이었다면 빈 패널을 남기지 않습니다. 텍스트 합치기나 파일 삭제는 하지 않습니다.
-- **`Ctrl+\`:** 다음 패널로 포커스를 순환하며 커서·선택 영역을 유지합니다. 명령의 기본 단축키이며 Obsidian 단축키 설정에서 변경할 수 있습니다.
-- 탭 이동은 공개 API로 대상 패널에 문서를 다시 엽니다. 대상 탭을 표시하고 지연 로딩 완료까지 기다린 뒤 내용을 확인하고 원래 탭을 닫습니다. 로딩 실패나 내용 불일치, 로딩 중 원본 변경 시 원래 탭을 유지합니다. 커서·선택·스크롤은 복원하지만 편집기의 Undo 이력까지 옮기지는 않습니다. 더블클릭 연결은 Obsidian의 탭/제목 DOM 클래스에 의존하므로 앱 UI 변경 시 조정이 필요할 수 있습니다.
+- Send text to the next editor pane (right / below)
+- Send text to the previous editor pane (left / above)
+- Move the current tab to the next / previous editor pane
+- Switch focus to another editor pane
 
-대상 저장 실패, 저장 내용 불일치, 이동 중 문서 변경 시 원본을 제거하지 않습니다. 이 경우 대상에 복사본이 남아 있을 수 있으니 안내에 따라 확인하세요. 두 파일을 한 번에 되돌리는 통합 Undo는 제공하지 않습니다. 파일 시스템 전체를 잠그는 작업이 아니므로 외부 프로그램/동기화 도구와의 동시 편집은 피하세요.
+Panes are cycled top to bottom, then left to right at the same height. The pane after the last one is the first, and the pane before the first is the last. Sending text, moving tabs, and switching focus all use the same order. Hidden tabs, sidebars, and pop-out windows are not targets.
 
-## 개발 및 검증
+- **With a selection:** the text is inserted at the **last cursor position of the target note** and removed from the source. A selection in the target is never overwritten.
+- **Without a selection:** after confirmation, the whole note is merged into the target under a `# File name` heading (not duplicated if the first line already is that heading). Once the target is verified as saved, the original goes to the system trash (or the vault trash if unavailable).
+- After sending, focus moves to the target editor. If the target pane is empty, a new note is created in the same folder as the source and receives the text. Whole-note transfers ask for confirmation before any pane or note is created; cancelling creates neither. In reading mode, or when source and target are the same file, only a notice is shown.
+- Multiple cursors are not supported. Use a single selection.
+- **Double-click a tab title or the note title bar:** moves the tab to the next pane. **Shift + double-click:** moves it to the previous pane. If there is no target, a new pane is created below. The original tab is closed only after the note is confirmed open in the target, and an emptied pane is not left behind. No text is merged and no file is deleted.
+- **Switch focus:** cycles focus to the next pane while keeping the cursor and selection. No pane is created.
+- No default hotkeys are assigned. Set your own in **Settings → Hotkeys** (for example `Ctrl+\` for switching focus).
 
-이 폴더에서 실행합니다. 다른 폴더의 파일은 필요 없습니다.
+Tab moves reopen the note in the target pane through the public API, reveal the target tab, and wait for deferred loading to finish before verifying the content and closing the original tab. If loading fails, the content does not match, or the source changes meanwhile, the original tab is kept. Cursor, selection, and scroll position are restored, but the editor's undo history is not carried over. The double-click binding relies on Obsidian's tab / title DOM classes and may need adjusting when the app UI changes.
+
+## Safety
+
+If saving the target fails, the saved content does not match, or a note changes during the transfer, the source is not removed. A copy may remain in the target in that case — follow the notice to check. There is no combined undo across both files. The operation does not lock the file system, so avoid editing the same notes concurrently with external programs or sync tools.
+
+The plugin makes no network requests and collects no data. It only reads and modifies notes inside your vault.
+
+## Development
 
 ```sh
 npm ci
@@ -51,8 +56,10 @@ npm test
 npm run test:ui
 ```
 
-`src/` 수정 후 빌드하면 실행용 `main.js`가 갱신됩니다. `npm run test:ui`는 숨긴 Electron 테스트 창에서 이동 버튼·더블클릭 연결·포커스 전환·확인창을 확인합니다. [요구사항 대조 기록](QA.md)에 적용 범위와 호스트 검증 한계를 정리했습니다.
+`npm run build` bundles `src/` into `main.js`. `npm run test:ui` checks the send buttons, the double-click binding, focus switching, and the confirmation dialog in a hidden Electron window. See the [requirements checklist](QA.md) (Korean) for coverage and the limits of host verification.
 
-테스트는 패널 위치 판정과 이동 실패 시 원본 보존, 지연 로딩된 탭 이동을 검증합니다. UI/보관함 API 대역을 사용한 검증과 실제 Obsidian에서의 검증은 다릅니다. 배포 전 실제 보관함의 복사본에서 동작을 확인하세요.
+The tests use stand-ins for the UI and vault APIs, which is not the same as verification in a real Obsidian. Try changes on a copy of a real vault before releasing.
 
-API 참고: [Obsidian 공식 API](https://github.com/obsidianmd/obsidian-api), [플러그인 개발 안내](https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin).
+## License
+
+[MIT](LICENSE)

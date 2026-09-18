@@ -3,7 +3,7 @@
   "name": "Lugtab",
   "version": "0.1.0",
   "minAppVersion": "1.7.2",
-  "description": "선택한 텍스트나 문서 전체를 다음·이전 문서 패널로 옮깁니다.",
+  "description": "Send the selected text or the whole note to the next or previous editor pane.",
   "author": "Revision",
   "isDesktopOnly": false
 }

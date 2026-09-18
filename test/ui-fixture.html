@@ -199,6 +199,6 @@ async function runTransferTest() {
   for (let frame = 0; frame < 20 && plugin.busy; frame++) await new Promise(resolve => requestAnimationFrame(resolve));
   const tabSplit = splits.pop();
   const relocatedTab = [activeLeaf.view.file.path, activeLeaf.view.editor.getValue(), views.length, source.containerEl.isConnected];
-  return { buttonCount, horizontalIcons, verticalIcons, moved, returned, emptyTarget, focusPreserved, hotkey: command.hotkeys[0], tabMoves, selectionProtected: mouse.defaultPrevented, duplicateCount, splits, autoTargets, cancelCreatedNothing, splitFailurePreservedSource, tabSplit, relocatedTab, deferredTabLoaded };
+  return { buttonCount, horizontalIcons, verticalIcons, moved, returned, emptyTarget, focusPreserved, hotkey: command.hotkeys?.[0], tabMoves, selectionProtected: mouse.defaultPrevented, duplicateCount, splits, autoTargets, cancelCreatedNothing, splitFailurePreservedSource, tabSplit, relocatedTab, deferredTabLoaded };
 }
 </script></body></html>

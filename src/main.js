@@ -10,7 +10,7 @@ module.exports = class PaneTransferPlugin extends Plugin {
     this.busy = false;
     this.actions = new Map();
     this.unloaded = false;
-    this.addCommand({ id: 'focus-other-pane', name: '다른 문서 패널로 포커스 전환', hotkeys: [{ modifiers: ['Ctrl'], key: '\\' }],
+    this.addCommand({ id: 'focus-other-pane', name: '다른 문서 패널로 포커스 전환',
       editorCallback: (_editor, view) => this.focusOtherPane(view) });
     for (const [direction, label] of [['next', '다음'], ['previous', '이전']]) {
       this.addCommand({ id: `move-tab-to-${direction}-pane`, name: `${label} 문서 패널로 현재 탭 옮기기`,
